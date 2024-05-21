@@ -45,7 +45,7 @@ export default function Login() {
             <Button
               disabled={!login || !password}
               color={styles.button.color}
-              title={isLoading ? '' : 'Submit'}
+              title={isLoading ? '' : 'Login'}
               onPress={submit}
             />
           )}
@@ -80,21 +80,21 @@ const styles = StyleSheet.create({
   button: {
     height: 44,
     textTransform: 'capitalize',
-    backgroundColor: 'rgb(33, 150, 243)',
-    color: '#fff',
     width: '100%',
     borderRadius: 4,
     display: 'flex',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    backgroundColor: 'rgb(33, 150, 243)',
+    color: '#fff',
   },
   buttonDisabled: {
     height: 44,
     textTransform: 'capitalize',
     width: '100%',
-    backgroundColor: 'rgb(161, 161, 161)',
-    color: 'rgb(161, 161, 161)',
     borderRadius: 4,
     display: 'flex',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    backgroundColor: 'rgb(161, 161, 161)',
+    color: 'rgb(161, 161, 161)',
   },
 });
