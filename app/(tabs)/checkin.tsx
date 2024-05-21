@@ -9,15 +9,17 @@ import { Schedule } from '../../types/schedule';
 import dayjs from 'dayjs';
 import * as Location from 'expo-location';
 import { Coordinate } from '../../types/coordinate';
+import { Visit } from '../../types/visit';
+import Entypo from '@expo/vector-icons/Entypo';
 
 export default function CheckIn() {
-  const [permission, setPermission] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCheckInLoading, setIsCheckInLoading] = useState<boolean>(false);
   const [currentSchedule, setCurrentSchedule] = useState<Schedule | null>(null);
 
   const getUserInfo = async () => {
     setIsLoading(true);
+
     const token = await AsyncStorage.getItem('token');
     const decoded = await jwtDecode<Student>(token);
 
@@ -42,20 +44,17 @@ export default function CheckIn() {
 
         const format = 'HHmmss';
         const filteredByDay = schedules.data.filter((schedule: Schedule) => Number(schedule.day) === (new Date().getDay() - 1));
-        // const result = filteredByDay.filter((schedule) => {
-        //   const now = dayjs(new Date()).format(format);
-        //   const start = dayjs(`2000-01-01 ${schedule.timeStart}`).format(format);
-        //   const finish = dayjs(`2000-01-01 ${schedule.timeFinish}`).format(format);
-        //   return now > start && now < finish;
-        // });
+        const result = filteredByDay.filter((schedule) => {
+          const now = dayjs(new Date()).format(format);
+          const start = dayjs(`2000-01-01 ${schedule.timeStart}`).format(format);
+          const finish = dayjs(`2000-01-01 ${schedule.timeFinish}`).format(format);
+          return now > start && now < finish;
+        });
 
-        // if (result?.length) {
-        //   setCurrentSchedule(result[0]);
-        // }
-
-        if (filteredByDay?.length) {
-          setCurrentSchedule(filteredByDay[0]);
+        if (result?.length) {
+          setCurrentSchedule(result[0]);
         }
+
       } catch (e) {
         console.log(e);
       }
@@ -66,8 +65,13 @@ export default function CheckIn() {
   const checkIn = async () => {
     setIsCheckInLoading(true);
     const currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest, timeInterval: 5000, mayShowUserSettingsDialog: true });
+
     const token = await AsyncStorage.getItem('token');
     const decoded = await jwtDecode<Student>(token);
+
+    if (!decoded) {
+      router.replace('/login');
+    }
 
     const { id } = decoded;
 
@@ -104,18 +108,71 @@ export default function CheckIn() {
     return dayjs(new Date().setHours(Number(hours), Number(minutes))).format('HH:mm');
   };
 
+  const getPermissions = async (): Promise<Coordinate> => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Please grant permission');
+      return;
+    }
+  };
+
+  const getVisits = async () => {
+    setIsLoading(true);
+
+    const token = await AsyncStorage.getItem('token');
+    const decoded = await jwtDecode<Student>(token);
+
+    if (!decoded) {
+      router.replace('/login');
+    }
+
+    const { id } = decoded;
+
+    if (id) {
+      try {
+        const visits = await axios.get(
+          `${process.env.EXPO_PUBLIC_API_URL}/visits/student/${id}/${currentSchedule.id}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+
+        const format = 'HHmmss';
+        const filteredByDay = visits.data.filter((visit: Visit) => new Date(visit.date).getDay() === (new Date().getDay()));
+        console.log(filteredByDay);
+        console.log(currentSchedule.timeStart);
+
+        // const result = filteredByDay.filter((schedule) => {
+        //   const now = dayjs(new Date()).format(format);
+        //   const start = dayjs(`2000-01-01 ${schedule.timeStart}`).format(format);
+        //   const finish = dayjs(`2000-01-01 ${schedule.timeFinish}`).format(format);
+        //   return now > start && now < finish;
+        // });
+
+        // if (result?.length) {
+        //   setCurrentSchedule(result[0]);
+        // }
+
+        // if (filteredByDay?.length) {
+        //   setCurrentSchedule(filteredByDay[0]);
+        // }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    setIsLoading(false);
+  };
+
   useEffect(() => {
     getUserInfo();
-    const getPermissions = async (): Promise<Coordinate> => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert('Please grant permission');
-        return;
-      }
-    };
     getPermissions();
   }, []);
+
+  useEffect(() => {
+    if (currentSchedule) {
+      getVisits();
+    }
+  }, [currentSchedule])
 
   if (isLoading) {
     return <View style={styles.loader}>
@@ -127,7 +184,7 @@ export default function CheckIn() {
     <View style={styles.container}>
       {currentSchedule
         ? (
-          <View style={styles.container}>
+          <>
             <View style={styles.row}>
               <Text style={styles.label}>Address: </Text>
               <Text style={styles.value}>{currentSchedule.auditory.building.address}</Text>
@@ -173,9 +230,16 @@ export default function CheckIn() {
                 <ActivityIndicator animating={isCheckInLoading} size="small" color="#fff" />
               )}
             </TouchableOpacity>
-          </View>
+          </>
         )
-        : (<Text>There are no active schedules right now</Text>)
+        : (
+          <>
+            <Text style={styles.label}>There are no active events right now</Text>
+            <View style={styles.noEvents}>
+              <Entypo name="circle-with-cross" size={100} color={'#b3261e'} />
+            </View>
+          </>
+        )
       }
     </View>
   );
@@ -194,8 +258,10 @@ const styles = StyleSheet.create({
   container: {
     display: 'flex',
     flexDirection: 'column',
-    padding: 15,
     gap: 25,
+    padding: 25,
+    height: '100%',
+    width: '100%',
   },
   row: {
     display: 'flex',
@@ -232,5 +298,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgb(161, 161, 161)',
     color: 'rgb(161, 161, 161)',
+  },
+  noEvents: {
+    position: 'absolute',
+    height: '100%',
+    width: '100%',
+    top: 25,
+    left: 25,
+    right: 0,
+    bottom: 0,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

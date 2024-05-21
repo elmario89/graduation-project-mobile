@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Student } from '../../types/student';
@@ -49,15 +49,11 @@ export default function Profile() {
     return (
         <View style={styles.container}>
             <View style={styles.row}>
-                <Text style={styles.label}>Name: </Text>
-                <Text style={styles.value}>{user.name}</Text>
+                <Text style={styles.label}>Student: </Text>
+                <Text style={styles.value}>{user.name} {user.surname}</Text>
             </View>
             <View style={styles.row}>
-                <Text style={styles.label}>Surname: </Text>
-                <Text style={styles.value}>{user.surname}</Text>
-            </View>
-            <View style={styles.row}>
-                <Text style={styles.label}>Group name: </Text>
+                <Text style={styles.label}>Group: </Text>
                 <Text style={styles.value}>{user.group.name}</Text>
             </View>
             <View style={styles.row}>
