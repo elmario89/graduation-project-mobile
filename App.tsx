@@ -1,8 +1,10 @@
 import React from 'react';
-import Login from './pages/Login';
+import { View, Text } from 'react-native';
 
 export default function App() {
   return (
-    <Login />
+    <View>
+      <Text>Open up App.js to start working on your app!</Text>
+    </View>
   );
 }
