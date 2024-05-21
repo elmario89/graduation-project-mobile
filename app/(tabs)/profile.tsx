@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Student } from '../../types/student';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
@@ -72,6 +72,33 @@ export default function Profile() {
                 <Text style={styles.label}>Education finish: </Text>
                 <Text style={styles.value}>{dayjs(user.group.finish).format('DD MMMM YYYY')}</Text>
             </View>
+
+            <TouchableOpacity style={styles.button}>
+                {!isLoading && (
+                    <Button
+                        color={styles.button.color}
+                        title={'Logout'}
+                        onPress={() => {
+                            Alert.alert('Logout', 'Are you sure you wnat to logout?', [
+                                {
+                                    text: 'Cancel',
+                                    style: 'cancel',
+                                },
+                                {
+                                    text: 'Logout', onPress: async () => {
+                                        await AsyncStorage.removeItem('token');
+                                        router.replace('/login');
+                                    }
+                                },
+                            ]);
+                        }}
+                    />
+                )}
+                {isLoading && (
+                    <ActivityIndicator animating={isLoading} size="small" color="#fff" />
+                )}
+            </TouchableOpacity>
+
         </View>
     );
 }
@@ -107,5 +134,14 @@ const styles = StyleSheet.create({
     value: {
         fontSize: 20,
         lineHeight: 25,
+    },
+    button: {
+        height: 44,
+        textTransform: 'capitalize',
+        borderRadius: 4,
+        display: 'flex',
+        justifyContent: 'center',
+        backgroundColor: '#b3261e',
+        color: '#fff',
     },
 });
