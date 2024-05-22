@@ -7,7 +7,6 @@ dayjs.locale('ru');
 
 export default function Home() {
     useFocusEffect(() => {
-        // AsyncStorage.removeItem('token');
         AsyncStorage.getItem('token')
             .then((token) => {
                 if (!token) {

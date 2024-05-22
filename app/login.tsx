@@ -29,7 +29,7 @@ export default function Login() {
           editable
           onChangeText={text => onChangeText(text)}
           value={login}
-          placeholder='Enter login'
+          placeholder='Введите логин'
           style={styles.input}
         />
         <TextInput
@@ -38,14 +38,14 @@ export default function Login() {
           value={password}
           onChangeText={password => onChangepassword(password)}
           style={styles.input}
-          placeholder='Enter password'
+          placeholder='Введите пароль'
         />
         <TouchableOpacity style={(!login || !password) ? styles.buttonDisabled : styles.button}>
           {!isLoading && (
             <Button
               disabled={!login || !password}
               color={styles.button.color}
-              title={isLoading ? '' : 'Login'}
+              title={isLoading ? '' : 'Авторизоваться'}
               onPress={submit}
             />
           )}

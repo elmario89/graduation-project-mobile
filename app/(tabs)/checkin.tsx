@@ -131,7 +131,7 @@ export default function CheckIn() {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
     if (status !== 'granted') {
-      Alert.alert('Please grant permission');
+      Alert.alert('Пожалуйста, разрешите отслеживание геопозиции');
       return;
     }
   };
@@ -198,7 +198,7 @@ export default function CheckIn() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-          <Text style={styles.label}>You already visited this event</Text>
+          <Text style={styles.label}>Вы уже отмечены на данном событии</Text>
             <View style={styles.noEvents}>
               <FontAwesome name="check-circle" size={100} color="#2e7d32" />
             </View>
@@ -216,35 +216,35 @@ export default function CheckIn() {
         ? (
           <>
             <View style={styles.row}>
-              <Text style={styles.label}>Address: </Text>
+              <Text style={styles.label}>Адрес: </Text>
               <Text style={styles.value}>{currentSchedule.auditory.building.address}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Building number: </Text>
+              <Text style={styles.label}>Номер здания: </Text>
               <Text style={styles.value}>{currentSchedule.auditory.building.number}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Floor: </Text>
+              <Text style={styles.label}>Этаж: </Text>
               <Text style={styles.value}>{currentSchedule.auditory.floor}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Auditory: </Text>
+              <Text style={styles.label}>Аудитория: </Text>
               <Text style={styles.value}>{currentSchedule.auditory.number}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Discipline: </Text>
+              <Text style={styles.label}>Дисциплина: </Text>
               <Text style={styles.value}>{currentSchedule.discipline.name}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Teacher: </Text>
+              <Text style={styles.label}>Преподаватель: </Text>
               <Text style={styles.value}>{currentSchedule.teacher.name} {currentSchedule.teacher.surname}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Start: </Text>
+              <Text style={styles.label}>Начало: </Text>
               <Text style={styles.value}>{getTime(currentSchedule.timeStart)}</Text>
             </View>
             <View style={styles.row}>
-              <Text style={styles.label}>Finish: </Text>
+              <Text style={styles.label}>Конец: </Text>
               <Text style={styles.value}>{getTime(currentSchedule.timeFinish)}</Text>
             </View>
             <TouchableOpacity style={isCheckInLoading ? styles.buttonDisabled : styles.button}>
@@ -252,7 +252,7 @@ export default function CheckIn() {
                 <Button
                   disabled={isCheckInLoading}
                   color={styles.button.color}
-                  title={isCheckInLoading ? '' : 'Check in'}
+                  title={isCheckInLoading ? '' : 'Отметиться'}
                   onPress={checkIn}
                 />
               )}
@@ -264,7 +264,7 @@ export default function CheckIn() {
         )
         : (
           <>
-            <Text style={styles.label}>There are no active events right now</Text>
+            <Text style={styles.label}>В данный момент событий нет</Text>
             <View style={styles.noEvents}>
               <Entypo name="circle-with-cross" size={100} color={'#b3261e'} />
             </View>

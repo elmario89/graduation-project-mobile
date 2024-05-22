@@ -49,23 +49,23 @@ export default function Profile() {
     return (
         <View style={styles.container}>
             <View style={styles.row}>
-                <Text style={styles.label}>Student: </Text>
+                <Text style={styles.label}>Студент: </Text>
                 <Text style={styles.value}>{user.name} {user.surname}</Text>
             </View>
             <View style={styles.row}>
-                <Text style={styles.label}>Group: </Text>
+                <Text style={styles.label}>Группа: </Text>
                 <Text style={styles.value}>{user.group.name}</Text>
             </View>
             <View style={styles.row}>
-                <Text style={styles.label}>Faculty: </Text>
+                <Text style={styles.label}>Факультет: </Text>
                 <Text style={styles.value}>{user.group.faculty.name}</Text>
             </View>
             <View style={styles.row}>
-                <Text style={styles.label}>Education start: </Text>
+                <Text style={styles.label}>Начало обучения: </Text>
                 <Text style={styles.value}>{dayjs(user.group.start).format('DD MMMM YYYY')}</Text>
             </View>
             <View style={styles.row}>
-                <Text style={styles.label}>Education finish: </Text>
+                <Text style={styles.label}>Конец обучения: </Text>
                 <Text style={styles.value}>{dayjs(user.group.finish).format('DD MMMM YYYY')}</Text>
             </View>
 
@@ -73,15 +73,15 @@ export default function Profile() {
                 {!isLoading && (
                     <Button
                         color={styles.button.color}
-                        title={'Logout'}
+                        title={'Выйти'}
                         onPress={() => {
-                            Alert.alert('Logout', 'Are you sure you wnat to logout?', [
+                            Alert.alert('Выйти', 'Вы уверены?', [
                                 {
-                                    text: 'Cancel',
+                                    text: 'Отмена',
                                     style: 'cancel',
                                 },
                                 {
-                                    text: 'Logout', onPress: async () => {
+                                    text: 'Выйти', onPress: async () => {
                                         await AsyncStorage.removeItem('token');
                                         router.replace('/login');
                                     }
