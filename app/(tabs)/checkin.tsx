@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { ActivityIndicator, Alert, Button, StyleSheet, Text, TouchableOpacity, View, RefreshControl, ScrollView } from 'react-native';
 import { Student } from '../../types/student';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
@@ -11,15 +11,28 @@ import * as Location from 'expo-location';
 import { Coordinate } from '../../types/coordinate';
 import { Visit } from '../../types/visit';
 import Entypo from '@expo/vector-icons/Entypo';
+import { FontAwesome } from '@expo/vector-icons';
 
 export default function CheckIn() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentVisit, setCurrentVisit] = useState<Visit | null>(null);
   const [isCheckInLoading, setIsCheckInLoading] = useState<boolean>(false);
   const [currentSchedule, setCurrentSchedule] = useState<Schedule | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+
+    Promise.all([
+      getVisits(),
+      getUserInfo()
+    ])
+      .finally(() => {
+        setRefreshing(false);
+      });
+  }, []);
 
   const getUserInfo = async () => {
-    setIsLoading(true);
-
     const token = await AsyncStorage.getItem('token');
     const decoded = await jwtDecode<Student>(token);
 
@@ -48,13 +61,14 @@ export default function CheckIn() {
           const now = dayjs(new Date()).format(format);
           const start = dayjs(`2000-01-01 ${schedule.timeStart}`).format(format);
           const finish = dayjs(`2000-01-01 ${schedule.timeFinish}`).format(format);
-          return now > start && now < finish;
+          return now >= start && now <= finish;
         });
 
         if (result?.length) {
           setCurrentSchedule(result[0]);
+        } else {
+          setCurrentSchedule(null);
         }
-
       } catch (e) {
         console.log(e);
       }
@@ -64,7 +78,13 @@ export default function CheckIn() {
 
   const checkIn = async () => {
     setIsCheckInLoading(true);
-    const currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest, timeInterval: 5000, mayShowUserSettingsDialog: true });
+    const currentLocation = await Location.getCurrentPositionAsync(
+      {
+        accuracy: Location.Accuracy.Highest,
+        timeInterval: 1000,
+        mayShowUserSettingsDialog: true
+      }
+    );
 
     const token = await AsyncStorage.getItem('token');
     const decoded = await jwtDecode<Student>(token);
@@ -76,30 +96,29 @@ export default function CheckIn() {
     const { id } = decoded;
 
     if (id) {
-      try {
-        const { coords: { longitude, latitude } } = currentLocation;
-
-        await axios.post(
-          `${process.env.EXPO_PUBLIC_API_URL}/visits`,
-          {
-            studentId: id,
-            scheduleId: currentSchedule.id,
-            date: new Date(),
-            coordinates: {
-              lng: longitude,
-              lat: latitude,
-            },
+      const { coords: { longitude, latitude } } = currentLocation;
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_API_URL}/visits`,
+        {
+          studentId: id,
+          scheduleId: currentSchedule.id,
+          date: new Date(),
+          coordinates: {
+            lng: longitude,
+            lat: latitude,
           },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        setIsCheckInLoading(false);
-      } catch (e) {
-        setIsCheckInLoading(false);
-        console.log(e);
-      }
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
+        .then((res) => {
+          setCurrentVisit(res.data);
+        })
+        .catch((e) => {
+          Alert.alert(e.response.data.message);
+        })
+        .finally(() => setIsCheckInLoading(false));
     }
   }
 
@@ -132,29 +151,22 @@ export default function CheckIn() {
     if (id) {
       try {
         const visits = await axios.get(
-          `${process.env.EXPO_PUBLIC_API_URL}/visits/student/${id}/${currentSchedule.id}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          `${process.env.EXPO_PUBLIC_API_URL}/visits/student/${id}/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { scheduleIds: [currentSchedule.id] },
+          },
         );
 
-        const format = 'HHmmss';
-        const filteredByDay = visits.data.filter((visit: Visit) => new Date(visit.date).getDay() === (new Date().getDay()));
-        console.log(filteredByDay);
-        console.log(currentSchedule.timeStart);
+        const filteredByDate = visits.data.filter((visit: Visit) => dayjs().isSame(dayjs(visit.date), 'day'));
 
-        // const result = filteredByDay.filter((schedule) => {
-        //   const now = dayjs(new Date()).format(format);
-        //   const start = dayjs(`2000-01-01 ${schedule.timeStart}`).format(format);
-        //   const finish = dayjs(`2000-01-01 ${schedule.timeFinish}`).format(format);
-        //   return now > start && now < finish;
-        // });
+        console.log(filteredByDate);
 
-        // if (result?.length) {
-        //   setCurrentSchedule(result[0]);
-        // }
-
-        // if (filteredByDay?.length) {
-        //   setCurrentSchedule(filteredByDay[0]);
-        // }
+        if (filteredByDate.length) {
+          setCurrentVisit(filteredByDate[0]);
+        } else {
+          setCurrentVisit(null);
+        }
       } catch (e) {
         console.log(e);
       }
@@ -164,15 +176,14 @@ export default function CheckIn() {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     getUserInfo();
     getPermissions();
   }, []);
 
   useEffect(() => {
-    if (currentSchedule) {
-      getVisits();
-    }
-  }, [currentSchedule])
+    getVisits();
+  }, [currentSchedule]);
 
   if (isLoading) {
     return <View style={styles.loader}>
@@ -180,8 +191,27 @@ export default function CheckIn() {
     </View>;
   }
 
+  if (currentVisit) {
+    return (
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+          <Text style={styles.label}>You already visited this event</Text>
+            <View style={styles.noEvents}>
+              <FontAwesome name="check-circle" size={100} color="#2e7d32" />
+            </View>
+        </ScrollView>
+    )
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       {currentSchedule
         ? (
           <>
@@ -241,7 +271,7 @@ export default function CheckIn() {
           </>
         )
       }
-    </View>
+    </ScrollView>
   );
 }
 
@@ -286,7 +316,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     display: 'flex',
     justifyContent: 'center',
-    backgroundColor: '#2ba640',
+    backgroundColor: '#2e7d32',
     color: '#fff',
   },
   buttonDisabled: {
