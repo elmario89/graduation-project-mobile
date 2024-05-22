@@ -24,7 +24,7 @@ export default function Login() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.container}>
-        <Text style={styles.titleText}>Sign in</Text>
+        <Text style={styles.titleText}>Авторизоваться</Text>
         <TextInput
           editable
           onChangeText={text => onChangeText(text)}
